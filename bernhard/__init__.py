@@ -23,15 +23,15 @@ class TCPTransport(object):
 
     def write(self, message):
         try:
-            # Tx length header
-            self.sock.send(struct.pack('!I', len(message)))
-            # Tx message
-            self.sock.send(message)
+            # Tx length header and message
+            self.sock.sendall(struct.pack('!I', len(message)) + message)
             # Rx length header
             rxlen = struct.unpack('!I', self.sock.recv(4))[0]
             # Rx response chunks
-            response = [self.sock.recv(4096) for _ in xrange(0, rxlen, 4096)]
-            return ''.join(response)
+            response = ''
+            while len(response) < rxlen:
+                response += self.sock.recv(rxlen)
+            return response
         except (socket.error, struct.error), e:
             raise TransportError(str(e))
 
